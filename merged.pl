@@ -194,11 +194,13 @@ while ( my $entry = <$fh_s> ) {
 }
 
 
+my %cachedPrimary;
+
 ##### Parsing flybase_structures file... #####
 LOAD:
 while ( my $entry = <$fh_e> ) {
     next unless $entry =~ m/^FBgn[0-9]+/;
-    
+
     my @t = split/\t/, $entry;
     
     my $gene_id       = $t[0];
@@ -208,9 +210,8 @@ while ( my $entry = <$fh_e> ) {
     my $region_end    = $t[6];
     my $strand        = $t[7];
     my $event_name    = $t[8];
-    
-    
-    
+
+
     #Transcripts ID
     if ( !$transcript_id =~ m/^FBtr[0-9]+/ ) {
         $parsed_error++;
@@ -253,63 +254,81 @@ while ( my $entry = <$fh_e> ) {
         print "Error: undefined event name: $entry\n";
         next LOAD;
     }
+
+    ##
+    if ( $cachedPrimary{$transcript_id.$gene_id} ) {
+        next LOAD;
+    }
+    else {
+        $cachedPrimary{$transcript_id.$gene_id}++;
+    }
     
-    #Integrate data
  INTEGRATE:
     foreach my $key (
                      sort {
                          $data->{$a}->{GeneID} cmp $data->{$b}->{GeneID}
                              ||
-                                 $a cmp $b
-                                     || 
-                                         $data->{$a}->{ExonStart} <=> $data->{$b}->{ExonStart}
-                                             ||
-                                                 $data->{$a}->{ExonEnd} <=> $data->{$b}->{ExonEnd}
-                                             }
-                     keys %{ $data } ) {
-        
-        #FBgn ID and FBtr ID is equal
-        if  ( $key eq $transcript_id 
-              && $data->{$key}->{GeneID} eq $gene_id ) {
-            print "$key\t$transcript_id\t$region_start\t$region_end\t$data->{$key}->{ExonStart}\t$data->{$key}->{ExonEnd}\t$data->{$key}->{ExonID}\n";
-            
+                                 $data->{$a}->{TranscriptID} cmp $data->{$b}->{TranscriptID}
+                                         ||
+                                             $data->{$a}->{ExonStart} <=> $data->{$b}->{ExonStart}
+                                                 ||
+                                                     $data->{$a}->{ExonEnd} <=> $data->{$b}->{ExonEnd}
+                             }
+                      keys %{ $data } ) {
 
-            # Exon is used as Alternative splicing, thus different length/positon from start and/or end
+        #FBgn ID and FBtr ID is equal
+        if  ( $data->{$key}->{TranscriptID} eq $transcript_id
+              && $data->{$key}->{GeneID} eq $gene_id ) {
+
+            #reference file
+            print $data->{$key}->{TranscriptID}, " :R   \t";
+            print $data->{$key}->{ExonID}, "\t";
+            print $data->{$key}->{GeneName}, "\t";
+            print $data->{$key}->{ExonStart}, "\t";
+            print $data->{$key}->{ExonEnd}, "\t";
+            print "\n";
+
+            next;
+            # Exon is used as AS
+            # different length/positon from start and/or end
             if ( $data->{$key}->{ExonStart} != $region_start
                  && $data->{$key}->{ExonEnd} != $region_end ) {
-                
-                print $data->{$key}->{GeneID}, "\t";
-                print $key, "\t";
-                print $data->{$key}->{ExonStart}, "\t";
-                print $data->{$key}->{ExonEnd}, "\t";
-                print $event_name, "\n";
-                #next INTEGRATE;
-                
-            }
-            
-            #Constitutive exon (Add anootation)
-            elsif ( $data->{$key}->{ExonStart} ==  $region_start && $data->{$key}->{ExonEnd} == $region_end ) {
-                print $data->{$key}->{GeneID}, "\t";
-                print $key, "\t";
+
+                print $data->{$key}->{TranscriptID}, " :ASSM\t";
+                print $data->{$key}->{ExonID}, "\t";
+                print $data->{$key}->{GeneName}, "\t";
                 print $region_start, "\t";
                 print $region_end, "\t";
                 print $event_name, "\t";
-                print $data->{$key}->{ExonID}, "\n";
-                #print $data->{$key}->{ExonID} . "=$region_start..$region_end," . "\t";
-                #next INTEGRATE;
+                print "\n";
+                
+            }
+            
+            #AS exon positions is equal constitutive exon position
+            #AS exon is mapping to ExonID of reference
+            elsif ( $data->{$key}->{ExonStart} ==  $region_start && $data->{$key}->{ExonEnd} == $region_end ) {
+                print $transcript_id, " :ASDF\t";
+                print $data->{$key}->{ExonID}, "\t";
+                print $data->{$key}->{GeneName}, "\t";
+                print $region_start, "\t";
+                print $region_end, "\t";
+                print $event_name, "\t";
+                print "\n";
+                
                 
             }
 
+        } else {
+            next;
         }
+
     }
+    print "#\n";
 }
 
 #print Dumper $data;
 
-
 print $parsed_error, "\n"  if $parsed_error > 0;
-
-=cut
 
 sub sort_region {
     
@@ -340,4 +359,5 @@ EOF
     
     return scalar $msg;
 }
+
 
