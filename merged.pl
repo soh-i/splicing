@@ -56,17 +56,17 @@ while ( my $entry = <$fh_s> ) {
     #this variable is 'pure' FBtr[0-9]+ ID 
     my $tr_id = $transcript_id;
     
-    #this variable is used as primary key of struct
+    #$primary is used as primary key of struct
     my $joiner = "-";
-    $transcript_id = $transcript_id.$joiner.$exon_id;
+    my $primary = $transcript_id.$joiner.$exon_id;
     
     #Transcripts ID
-    if ( $transcript_id =~ m/^FBtr[0-9]+/ && $tr_id =~ m/^FBtr[0-9]+$/ ) {
-        $data->{$transcript_id}->{TranscriptID} = $tr_id;
+    if ( $primary =~ m/^FBtr[0-9]+/ && $tr_id =~ m/^FBtr[0-9]+$/ ) {
+        $data->{$primary}->{TranscriptID} = $tr_id;
         
         #Gene ID
         if ( $gene_id =~ m/^FBgn[0-9]+/ ) {
-            $data->{$transcript_id}->{GeneID} = $gene_id;
+            $data->{$primary}->{GeneID} = $gene_id;
         }
         else {
             $parsed_error++;
@@ -76,7 +76,7 @@ while ( my $entry = <$fh_s> ) {
         
         #Exon ID
         if ( $exon_id =~ m/^\d+|\w+\:.+$/ ) {
-            $data->{$transcript_id}->{ExonID} = $exon_id;
+            $data->{$primary}->{ExonID} = $exon_id;
         }
         else {
             $parsed_error++;
@@ -86,7 +86,7 @@ while ( my $entry = <$fh_s> ) {
         
         #Gene name
         if ( defined $gene_name ) {
-            $data->{$transcript_id}->{GeneName} = $gene_name;
+            $data->{$primary}->{GeneName} = $gene_name;
         }
         else {
             $parsed_error++;
@@ -96,7 +96,7 @@ while ( my $entry = <$fh_s> ) {
         
         #Chromosome
         if ( defined $chromosome ) {
-            $data->{$transcript_id}->{Chromosome} = $chromosome;
+            $data->{$primary}->{Chromosome} = $chromosome;
         }
         else {
             $parsed_error++;
@@ -106,7 +106,7 @@ while ( my $entry = <$fh_s> ) {
         
         #Strand
         if ( $strand =~ m/\-1|1/ ) {
-            $data->{$transcript_id}->{Strand} = $strand;
+            $data->{$primary}->{Strand} = $strand;
         }
         else {
             $parsed_error++;
@@ -117,9 +117,10 @@ while ( my $entry = <$fh_s> ) {
         #Gene start and end positions
         if ( $gene_start =~ m/^[0-9]+$/ && $gene_end =~ m/^[0-9]+$/ ) {
             my $region = sort_region($gene_start, $gene_end);
-            $data->{$transcript_id}->{Gene_region} = $region if defined $region;
-            $data->{$transcript_id}->{GeneStart}   = $gene_start if defined $gene_start;
-            $data->{$transcript_id}->{GeneEnd}     = $gene_end if defined $gene_end;
+            
+            $data->{$primary}->{Gene_region} = $region     if defined $region;
+            $data->{$primary}->{GeneStart}   = $gene_start if defined $gene_start;
+            $data->{$primary}->{GeneEnd}     = $gene_end   if defined $gene_end;
         }
         else {
             $parsed_error++;
@@ -130,18 +131,18 @@ while ( my $entry = <$fh_s> ) {
         #5'UTR
         if ( $fiveUTR_Start =~ m/^[0-9]+$/ && $fiveUTR_End =~ m/^[0-9]+$/ ) {
             my $five_region = sort_region($fiveUTR_Start, $fiveUTR_End);
-            $data->{$transcript_id}->{'5UTR'} = $five_region if defined $five_region;
+            $data->{$primary}->{'5UTR'} = $five_region if defined $five_region;
             
             #$data->{$transcript_id}->{'5UTR_Start'} = $fiveUTR_Start;
             #$data->{$transcript_id}->{'3UTR_Start'} = $fiveUTR_End;
         }
         elsif ( defined $fiveUTR_Start ) {
             #hyphen means no-data
-            $data->{$transcript_id}->{'5UTR'} = "-";
+            $data->{$primary}->{'5UTR'} = "-";
             #$data->{$transcript_id}->{'5UTR_Start'}  = "-";
         }
         elsif ( defined $fiveUTR_End ) {
-            $data->{$transcript_id}->{'5UTR'} = "-";
+            $data->{$primary}->{'5UTR'} = "-";
             #$data->{$transcript_id}->{'5UTR_End'}  = "-";
         }
         else {
@@ -153,17 +154,17 @@ while ( my $entry = <$fh_s> ) {
         #3'UTR
         if ( $threeUTR_Start =~ m/^[0-9]+$/ && $threeUTR_End =~ m/^[0-9]+$/ ) {
             my $three_region = sort_region($threeUTR_Start, $threeUTR_End);
-            $data->{$transcript_id}->{'3UTR'} = $three_region if defined $three_region;
+            $data->{$primary}->{'3UTR'} = $three_region if defined $three_region;
             
             #$data->{$transcript_id}->{'3UTR_Start'} = $threeUTR_Start;
             #$data->{$transcript_id}->{'3UTR_End'}   = $threeUTR_End;
         }
         elsif ( defined $threeUTR_Start ) {
-            $data->{$transcript_id}->{'3UTR'} = "-";
+            $data->{$primary}->{'3UTR'} = "-";
             #$data->{$transcript_id}->{'3UTR_Start'} = "-";
         }
         elsif ( defined $threeUTR_End ) {
-            $data->{$transcript_id}->{'3UTR'} = "-";
+            $data->{$primary}->{'3UTR'} = "-";
             #$data->{$transcript_id}->{'3UTR_End'} = "-";
         }
         else {
@@ -175,10 +176,10 @@ while ( my $entry = <$fh_s> ) {
         #Exon postions
         if ( $ExonStart =~ m/^[0-9]+$/ && $ExonEnd =~ m/^[0-9]+$/ ) {
             my $exon_region = sort_region($ExonStart, $ExonEnd);
-            $data->{$transcript_id}->{Exon_region} = $exon_region if defined $exon_region;
+            $data->{$primary}->{Exon_region} = $exon_region if defined $exon_region;
             
-            $data->{$transcript_id}->{ExonStart} = $ExonStart;
-            $data->{$transcript_id}->{ExonEnd}   = $ExonEnd;
+            $data->{$primary}->{ExonStart} = $ExonStart;
+            $data->{$primary}->{ExonEnd}   = $ExonEnd;
         }
         else {
             $parsed_error++;
@@ -254,8 +255,8 @@ while ( my $entry = <$fh_e> ) {
         print "Error: undefined event name: $entry\n";
         next LOAD;
     }
-
-    ##
+    
+    ##cached primary key
     if ( $cachedPrimary{$transcript_id.$gene_id} ) {
         next LOAD;
     }
@@ -269,17 +270,17 @@ while ( my $entry = <$fh_e> ) {
                          $data->{$a}->{GeneID} cmp $data->{$b}->{GeneID}
                              ||
                                  $data->{$a}->{TranscriptID} cmp $data->{$b}->{TranscriptID}
-                                         ||
-                                             $data->{$a}->{ExonStart} <=> $data->{$b}->{ExonStart}
-                                                 ||
-                                                     $data->{$a}->{ExonEnd} <=> $data->{$b}->{ExonEnd}
+                                     ||
+                                         $data->{$a}->{ExonStart} <=> $data->{$b}->{ExonStart}
+                                             ||
+                                                 $data->{$a}->{ExonEnd} <=> $data->{$b}->{ExonEnd}
                              }
-                      keys %{ $data } ) {
-
+                     keys %{ $data } ) {
+        
         #FBgn ID and FBtr ID is equal
         if  ( $data->{$key}->{TranscriptID} eq $transcript_id
               && $data->{$key}->{GeneID} eq $gene_id ) {
-
+            
             #reference file
             print $data->{$key}->{TranscriptID}, " :R   \t";
             print $data->{$key}->{ExonID}, "\t";
@@ -287,8 +288,9 @@ while ( my $entry = <$fh_e> ) {
             print $data->{$key}->{ExonStart}, "\t";
             print $data->{$key}->{ExonEnd}, "\t";
             print "\n";
+            
+           # next;
 
-            next;
             # Exon is used as AS
             # different length/positon from start and/or end
             if ( $data->{$key}->{ExonStart} != $region_start
@@ -306,7 +308,9 @@ while ( my $entry = <$fh_e> ) {
             
             #AS exon positions is equal constitutive exon position
             #AS exon is mapping to ExonID of reference
-            elsif ( $data->{$key}->{ExonStart} ==  $region_start && $data->{$key}->{ExonEnd} == $region_end ) {
+            elsif ( $data->{$key}->{ExonStart} ==  $region_start
+                    && $data->{$key}->{ExonEnd} == $region_end ) {
+                
                 print $transcript_id, " :ASDF\t";
                 print $data->{$key}->{ExonID}, "\t";
                 print $data->{$key}->{GeneName}, "\t";
@@ -318,8 +322,9 @@ while ( my $entry = <$fh_e> ) {
                 
             }
 
-        } else {
-            next;
+        }
+        else {
+            next ;
         }
 
     }
@@ -328,7 +333,7 @@ while ( my $entry = <$fh_e> ) {
 
 #print Dumper $data;
 
-print $parsed_error, "\n"  if $parsed_error > 0;
+print $parsed_error, "\n" if $parsed_error > 0;
 
 sub sort_region {
     
