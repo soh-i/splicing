@@ -2,12 +2,13 @@
 
 use strict;
 use warnings;
-
 use 5.12.4;
 
 use Data::Dumper;
 
+# Reference file
 my $structures_file = '/home/soh.i/melanogaster/flybase_structures.tsv';
+# File that annotation of Alternative splicing 
 my $events_file     = '/home/soh.i/melanogaster/flybase_TranscriptEvent.tsv';
 
 # Command line options
@@ -130,47 +131,49 @@ while ( my $entry = <$fh_s> ) {
         
         #5'UTR
         if ( $fiveUTR_Start =~ m/^[0-9]+$/ && $fiveUTR_End =~ m/^[0-9]+$/ ) {
-            my $five_region = sort_region($fiveUTR_Start, $fiveUTR_End);
-            $data->{$primary}->{'5UTR'} = $five_region if defined $five_region;
             
-            #$data->{$transcript_id}->{'5UTR_Start'} = $fiveUTR_Start;
-            #$data->{$transcript_id}->{'3UTR_Start'} = $fiveUTR_End;
+            my $five_region = sort_region($fiveUTR_Start, $fiveUTR_End);
+            $data->{$primary}->{'5UTR'}       = $five_region if defined $five_region;
+            
+            $data->{$primary}->{'5UTR_Start'} = $fiveUTR_Start;
+            $data->{$primary}->{'3UTR_Start'} = $fiveUTR_End;
         }
         elsif ( defined $fiveUTR_Start ) {
             #hyphen means no-data
-            $data->{$primary}->{'5UTR'} = "-";
-            #$data->{$transcript_id}->{'5UTR_Start'}  = "-";
+            $data->{$primary}->{'5UTR'}       = "-";
+            $data->{$primary}->{'5UTR_Start'} = "-";
         }
         elsif ( defined $fiveUTR_End ) {
-            $data->{$primary}->{'5UTR'} = "-";
-            #$data->{$transcript_id}->{'5UTR_End'}  = "-";
+            $data->{$primary}->{'5UTR'}      = "-";
+            $data->{$primary}->{'5UTR_End'}  = "-";
         }
         else {
             $parsed_error++;
             print "Error: 5UTR start/end(undefined) at $entry\n";
             die; #withhold
         }
-    
+        
         #3'UTR
         if ( $threeUTR_Start =~ m/^[0-9]+$/ && $threeUTR_End =~ m/^[0-9]+$/ ) {
+            
             my $three_region = sort_region($threeUTR_Start, $threeUTR_End);
             $data->{$primary}->{'3UTR'} = $three_region if defined $three_region;
             
-            #$data->{$transcript_id}->{'3UTR_Start'} = $threeUTR_Start;
-            #$data->{$transcript_id}->{'3UTR_End'}   = $threeUTR_End;
+            $data->{$primary}->{'3UTR_Start'} = $threeUTR_Start;
+            $data->{$primary}->{'3UTR_End'}   = $threeUTR_End;
         }
         elsif ( defined $threeUTR_Start ) {
-            $data->{$primary}->{'3UTR'} = "-";
-            #$data->{$transcript_id}->{'3UTR_Start'} = "-";
+            $data->{$primary}->{'3UTR'}       = "-";
+            $data->{$primary}->{'3UTR_Start'} = "-";
         }
         elsif ( defined $threeUTR_End ) {
-            $data->{$primary}->{'3UTR'} = "-";
-            #$data->{$transcript_id}->{'3UTR_End'} = "-";
+            $data->{$primary}->{'3UTR'}     = "-";
+            $data->{$primary}->{'3UTR_End'} = "-";
         }
         else {
             $parsed_error++;
             print "Error: 3UTR Start/End at $entry\n";
-            die; 
+            die;
         }
         
         #Exon postions
@@ -189,30 +192,37 @@ while ( my $entry = <$fh_s> ) {
     }
     else {
         $parsed_error++;
-        print "Error: invalid transcript ID at $entry\n";
-        next;
+        print "Error: invalid transcript ID format at $entry\n";
+        next; 
     }
 }
 
 
-my %cachedPrimary;
-
 ##### Parsing flybase_structures file... #####
+    
+my %cachedPrimary;
+my $REFERENCE;
+my $AS_EXON;
+
+my $FLAG_CONTINUE = 0;
+my ($BEFORE_GENE_ID, $BEFORE_TRANSCRIPT_ID) = qw//;
+  
 LOAD:
 while ( my $entry = <$fh_e> ) {
     next unless $entry =~ m/^FBgn[0-9]+/;
-
+    
     my @t = split/\t/, $entry;
     
     my $gene_id       = $t[0];
     my $transcript_id = $t[1];
+    my $conbined_id   = $t[2] if defined $t[2];
     my $chromosome    = $t[3];
+    my $original_id   = $t[4];
     my $region_start  = $t[5];
     my $region_end    = $t[6];
     my $strand        = $t[7];
     my $event_name    = $t[8];
-
-
+    
     #Transcripts ID
     if ( !$transcript_id =~ m/^FBtr[0-9]+/ ) {
         $parsed_error++;
@@ -226,7 +236,7 @@ while ( my $entry = <$fh_e> ) {
         print "Error: invalid Gene ID at $entry\n";
         next LOAD;
     }
-
+    
     #Chromosome
     if ( !defined $chromosome ) {
         $parsed_error++;
@@ -255,14 +265,25 @@ while ( my $entry = <$fh_e> ) {
         print "Error: undefined event name: $entry\n";
         next LOAD;
     }
-    
-    ##cached primary key
-    if ( $cachedPrimary{$transcript_id.$gene_id} ) {
-        next LOAD;
+
+    if ( $BEFORE_GENE_ID && $BEFORE_TRANSCRIPT_ID
+         && $BEFORE_GENE_ID eq $gene_id
+         && $BEFORE_TRANSCRIPT_ID eq $transcript_id ) {
+        $FLAG_CONTINUE = 1;
+    }
+    elsif ( $. == 2 ) {
+        # [line No.2 => initialize BEFORE_* variables]
+        ($BEFORE_GENE_ID, $BEFORE_TRANSCRIPT_ID) = ($gene_id, $transcript_id);
     }
     else {
-        $cachedPrimary{$transcript_id.$gene_id}++;
+        print $REFERENCE,$AS_EXON,"#\n";
+        ($BEFORE_GENE_ID, $BEFORE_TRANSCRIPT_ID) = ($gene_id, $transcript_id);
+        ($FLAG_CONTINUE, $REFERENCE, $AS_EXON) = (0, '', '');
     }
+
+    my $FLAG_REFERENCE  = 'START';
+    my $FLAG_SAME_POS_EXON = 0;
+    my $THIS_EXON       = q//;
     
  INTEGRATE:
     foreach my $key (
@@ -274,66 +295,85 @@ while ( my $entry = <$fh_e> ) {
                                          $data->{$a}->{ExonStart} <=> $data->{$b}->{ExonStart}
                                              ||
                                                  $data->{$a}->{ExonEnd} <=> $data->{$b}->{ExonEnd}
-                             }
+                                             }
                      keys %{ $data } ) {
-        
-        #FBgn ID and FBtr ID is equal
-        if  ( $data->{$key}->{TranscriptID} eq $transcript_id
-              && $data->{$key}->{GeneID} eq $gene_id ) {
-            
-            #reference file
-            print $data->{$key}->{TranscriptID}, " :R   \t";
-            print $data->{$key}->{ExonID}, "\t";
-            print $data->{$key}->{GeneName}, "\t";
-            print $data->{$key}->{ExonStart}, "\t";
-            print $data->{$key}->{ExonEnd}, "\t";
-            print "\n";
-            
-           # next;
+    
+        unless ( $FLAG_CONTINUE ) {
+            last if $FLAG_REFERENCE eq 'DONE';
 
-            # Exon is used as AS
-            # different length/positon from start and/or end
-            if ( $data->{$key}->{ExonStart} != $region_start
-                 && $data->{$key}->{ExonEnd} != $region_end ) {
+            #FBgn ID and FBtr ID is equal
+            if  ( $data->{$key}->{GeneID} eq $gene_id
+                  && $data->{$key}->{TranscriptID} eq $transcript_id ) {
 
-                print $data->{$key}->{TranscriptID}, " :ASSM\t";
-                print $data->{$key}->{ExonID}, "\t";
-                print $data->{$key}->{GeneName}, "\t";
-                print $region_start, "\t";
-                print $region_end, "\t";
-                print $event_name, "\t";
-                print "\n";
+                $REFERENCE .=
+                    $data->{$key}->{TranscriptID}. " :R   \t".
+                        $data->{$key}->{ExonID}. " \t".            
+                            $data->{$key}->{GeneName}. "\t".           
+                                $data->{$key}->{ExonStart}. "\t".          
+                                    $data->{$key}->{ExonEnd}. "\n";
                 
+                $FLAG_REFERENCE = 'CONTINUE';
             }
-            
+            elsif ( $FLAG_REFERENCE eq 'CONTINUE' ) {
+                $FLAG_REFERENCE = 'DONE';
+            }
+        }
+        
+        ##cached primary key
+        # next if $cachedPrimary{$transcript_id.$gene_id};
+
+        # Exon is used as AS
+        # different length/positon from start and/or end
+        if ( $data->{$key}->{GeneID} eq $gene_id
+             && $data->{$key}->{TranscriptID} eq $transcript_id ) {
+             
+            if ( $data->{$key}->{ExonStart} != $region_start
+                 && $data->{$key}->{ExonEnd} != $region_end
+                 && $FLAG_SAME_POS_EXON != 1 ) {
+
+                $THIS_EXON = $data->{$key}->{TranscriptID}. " :AS!=\t".
+                    "$gene_id.A". "\t".
+                        $data->{$key}->{GeneName}. "\t".
+                            $data->{$key}->{ExonStart}. "\t".
+                                $data->{$key}->{ExonEnd}. "\t".
+                                    $region_start. "\t".
+                                        $region_end. "\t".
+                                            $event_name."\n";
+
+            }
+        
             #AS exon positions is equal constitutive exon position
             #AS exon is mapping to ExonID of reference
             elsif ( $data->{$key}->{ExonStart} ==  $region_start
                     && $data->{$key}->{ExonEnd} == $region_end ) {
                 
-                print $transcript_id, " :ASDF\t";
-                print $data->{$key}->{ExonID}, "\t";
-                print $data->{$key}->{GeneName}, "\t";
-                print $region_start, "\t";
-                print $region_end, "\t";
-                print $event_name, "\t";
-                print "\n";
+                $THIS_EXON = $transcript_id. " :AS==\t".
+                    $data->{$key}->{ExonID}. "\t".
+                        $data->{$key}->{GeneName}. "\t".
+                            $region_start. "\t".
+                                $region_end. "\t".
+                                    $event_name. "\n";
                 
+                $FLAG_SAME_POS_EXON = 1;
                 
+                last if $FLAG_REFERENCE eq 'DONE';
             }
-
         }
-        else {
-            next ;
-        }
-
     }
-    print "#\n";
+    
+    $AS_EXON .= $THIS_EXON;
+    
 }
+
+print $REFERENCE,$AS_EXON,"#\n";
+
+
+my $header = "GeneID\tTranscriptID\tExonID\tExon Start\tExon end\n";
 
 #print Dumper $data;
 
 print $parsed_error, "\n" if $parsed_error > 0;
+
 
 sub sort_region {
     
@@ -342,27 +382,31 @@ sub sort_region {
     
     if ( $start < $end ) {
         my $join = "$start..$end";
+        
         return scalar $join;
     }
     elsif ( $start > $end ) {
         my $reversed_join = "$end..$start";
+        
         return scalar $reversed_join;
     }
     else {
-        return "Error:";
+        return "Error: could not sort numetrically";
     }
 }
 
 sub help {
     
     my $msg = <<EOF;
-this script is used for merging the two Alternative splicing events data from Ensembl Biomart"
+this script is used for merging the two file that alternative splicing events data from Ensembl Biomart"
 Usage:
-      perl $0 <in.data> 
+      perl $0
+
+Options:
+     --help|-h : Show help page
           
 EOF
     
     return scalar $msg;
 }
-
 
