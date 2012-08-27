@@ -276,15 +276,19 @@ while ( my $entry = <$fh_e> ) {
         ($BEFORE_GENE_ID, $BEFORE_TRANSCRIPT_ID) = ($gene_id, $transcript_id);
     }
     else {
-        print $REFERENCE,$AS_EXON,"#\n";
+        print $REFERENCE, $AS_EXON,"#\n";
         ($BEFORE_GENE_ID, $BEFORE_TRANSCRIPT_ID) = ($gene_id, $transcript_id);
         ($FLAG_CONTINUE, $REFERENCE, $AS_EXON) = (0, '', '');
     }
 
-    my $FLAG_REFERENCE  = 'START';
+    my $FLAG_REFERENCE     = 'START';
     my $FLAG_SAME_POS_EXON = 0;
-    my $THIS_EXON       = q//;
+    my $THIS_EXON          = q//;
     
+    
+    my $known_exon   = 'known  ';
+    my $unknown_exon = 'unknown';
+        
  INTEGRATE:
     foreach my $key (
                      sort {
@@ -304,13 +308,22 @@ while ( my $entry = <$fh_e> ) {
             #FBgn ID and FBtr ID is equal
             if  ( $data->{$key}->{GeneID} eq $gene_id
                   && $data->{$key}->{TranscriptID} eq $transcript_id ) {
-
+                
+                # Join reference exon
                 $REFERENCE .=
-                    $data->{$key}->{TranscriptID}. " :R   \t".
-                        $data->{$key}->{ExonID}. " \t".            
-                            $data->{$key}->{GeneName}. "\t".           
-                                $data->{$key}->{ExonStart}. "\t".          
-                                    $data->{$key}->{ExonEnd}. "\n";
+                    $data->{$key}->{GeneID}. "\t".
+                        $data->{$key}->{TranscriptID}. " :Ref \t".
+                            $known_exon. "\t".
+                                $data->{$key}->{GeneName}. "\t".
+                                    $data->{$key}->{Chromosome}. "\t".
+                                        $data->{$key}->{Strand}. "\t".
+                                            $data->{$key}->{GeneStart}. "\t".
+                                                $data->{$key}->{GeneEnd}. "\t".
+                                                    $data->{$key}->{ExonID}. " \t".
+                                                        $data->{$key}->{ExonStart}. "\t".
+                                                            $data->{$key}->{ExonEnd}. "\t".
+                                                                $data->{$key}->{'3UTR'}. "\t".
+                                                                    $data->{$key}->{'5UTR'}. "\n";
                 
                 $FLAG_REFERENCE = 'CONTINUE';
             }
@@ -326,33 +339,48 @@ while ( my $entry = <$fh_e> ) {
         # different length/positon from start and/or end
         if ( $data->{$key}->{GeneID} eq $gene_id
              && $data->{$key}->{TranscriptID} eq $transcript_id ) {
-             
+            
             if ( $data->{$key}->{ExonStart} != $region_start
                  && $data->{$key}->{ExonEnd} != $region_end
                  && $FLAG_SAME_POS_EXON != 1 ) {
-
-                $THIS_EXON = $data->{$key}->{TranscriptID}. " :AS!=\t".
-                    "$gene_id.A". "\t".
-                        $data->{$key}->{GeneName}. "\t".
-                            $data->{$key}->{ExonStart}. "\t".
-                                $data->{$key}->{ExonEnd}. "\t".
-                                    $region_start. "\t".
-                                        $region_end. "\t".
-                                            $event_name."\n";
-
+                
+                $THIS_EXON =
+                    $data->{$key}->{GeneID}. "\t".
+                        $data->{$key}->{TranscriptID}. " :AS!=\t".
+                            $unknown_exon. "\t".
+                                $data->{$key}->{GeneName}. "\t".
+                                    $data->{$key}->{Chromosome}. "\t".
+                                        $data->{$key}->{Strand}. "\t".
+                                            $data->{$key}->{GeneStart}. "\t".
+                                                $data->{$key}->{GeneEnd}. "\t".
+                                                    "$gene_id.A". "\t".
+                                                        $region_start. "\t".
+                                                            $region_end. "\t".
+                                                                $data->{$key}->{'3UTR'}. "\t".
+                                                                    $data->{$key}->{'5UTR'}. "\t".
+                                                                        $event_name."\n";
             }
-        
+            
             #AS exon positions is equal constitutive exon position
             #AS exon is mapping to ExonID of reference
             elsif ( $data->{$key}->{ExonStart} ==  $region_start
                     && $data->{$key}->{ExonEnd} == $region_end ) {
                 
-                $THIS_EXON = $transcript_id. " :AS==\t".
-                    $data->{$key}->{ExonID}. "\t".
-                        $data->{$key}->{GeneName}. "\t".
-                            $region_start. "\t".
-                                $region_end. "\t".
-                                    $event_name. "\n";
+                $THIS_EXON =
+                    $data->{$key}->{GeneID}. "\t".
+                        $transcript_id. " :AS==\t".
+                            $known_exon. "\t".
+                                $data->{$key}->{GeneName}. "\t".
+                                    $data->{$key}->{Chromosome}. "\t".
+                                        $data->{$key}->{Strand}. "\t".
+                                            $data->{$key}->{GeneStart}. "\t".
+                                                $data->{$key}->{GeneEnd}. "\t".
+                                                    $data->{$key}->{ExonID}. "\t".
+                                                        $region_start. "\t".
+                                                            $region_end. "\t".
+                                                                $data->{$key}->{'3UTR'}. "\t".
+                                                                    $data->{$key}->{'5UTR'}. "\t".
+                                                                        $event_name. "\n";
                 
                 $FLAG_SAME_POS_EXON = 1;
                 
