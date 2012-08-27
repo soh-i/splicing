@@ -64,3 +64,4 @@ while ( my $line = <$fh> ) {
 
 
 
+print Dumper $data;
