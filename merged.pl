@@ -197,6 +197,8 @@ while ( my $entry = <$fh_s> ) {
     }
 }
 
+my $header = "GeneID\tTranscriptID\tExonID\tGene Name\tStrand\tGene Start\tGene end\tExon Start\tExon end\t3'UTR\t5'UTR\tEvent name\n";
+print $header;
 
 ##### Parsing flybase_structures file... #####
     
@@ -395,8 +397,6 @@ while ( my $entry = <$fh_e> ) {
 
 print $REFERENCE,$AS_EXON,"#\n";
 
-
-my $header = "GeneID\tTranscriptID\tExonID\tExon Start\tExon end\n";
 
 #print Dumper $data;
 
