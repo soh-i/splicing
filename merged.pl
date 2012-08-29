@@ -196,6 +196,8 @@ while ( my $entry = <$fh_s> ) {
         next; 
     }
 }
+close $fh_s;
+
 
 my $header = "GeneID\tTranscriptID\tExonID\tGene Name\tStrand\tGene Start\tGene end\tExon Start\tExon end\t3'UTR\t5'UTR\tEvent name\n";
 print $header;
@@ -392,8 +394,9 @@ while ( my $entry = <$fh_e> ) {
     }
     
     $AS_EXON .= $THIS_EXON;
-    
 }
+close $fh_e;
+
 
 print $REFERENCE,$AS_EXON,"#\n";
 
