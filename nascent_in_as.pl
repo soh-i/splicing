@@ -23,7 +23,7 @@ while ( my $line = <$fh> ) {
     $loci =~ s/\"?//g;
     $loci =~ s/\,?//g;
     $chr =~ s/^chr//g;
-        
+    
     $data->{$gene_name.$loci}->{Gene} = $gene_name;
     $data->{$gene_name.$loci}->{Type} = $type;
     $data->{$gene_name.$loci}->{Chr}  = $chr;
@@ -33,7 +33,7 @@ while ( my $line = <$fh> ) {
 close $fh;
 
 #loading AS reference file
-my $as_file = './flybase_TranscriptEvent.tsv';
+my $as_file = '../flybase_TranscriptEvent.tsv';
 
 open my $as, '<', $as_file || die;
 my $ref_data = {};
@@ -61,13 +61,14 @@ close $as_file;
 # Find editing site onto splice site
 foreach my $ref_key ( keys %{ $data } ) {
     foreach my $as_key ( keys %{ $ref_data } ) {
-        print $as_key;die;
+        
         if ( $data->{$ref_key}->{Chr} eq $ref_data->{$as_key}->{Chr} ) {
-            #die $data->{$ref_key}->{Loci};
+            #print $data->{$ref_key}->{Loci};
             #die $ref_data->{$as_key}->{ExonStart};
+            
             if ( $data->{$ref_key}->{Loci} == $ref_data->{$as_key}->{ExonStart}
                  ||
-                 $data->{$ref_key}->{Loci} == $data->{$as_key}->{ExonEnd} ) {
+                 $data->{$ref_key}->{Loci} == $ref_data->{$as_key}->{ExonEnd} ) {
                 
                 print $data->{$ref_key}->{Loci}. "\t";
                 print $ref_data->{$as_key}->{ExonStart}. "\t";
@@ -76,4 +77,6 @@ foreach my $ref_key ( keys %{ $data } ) {
         }
     }
 }
+
+
 
