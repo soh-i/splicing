@@ -16,11 +16,20 @@ if ( scalar @ARGV != 0 ) {
         say help();
         exit(1);
     }
+    elsif ( $cmd =~ m/^-{2}run$/ ) {
+        say "Running..."; #Running program
+        sleep(1);
+    }
     else {
         say "Input your \'$cmd\' is invalid commandline options!\n";
         say help();
         exit(1);
     }
+    
+}
+else {
+    say help();
+    exit(1);
 }
 
 ### INPUT FILES
@@ -183,12 +192,18 @@ foreach my $gtf ( keys %{ $gtf } ) {
 ### HELP MASSAGES
 sub help {
     my $msg = <<EOF
-this script is used for finding onto RNA editing site in alternative 3' splice site
-    Annotation file = $annotation_gtf
-    RNA editing site = $editing_list #Drived from DAtabase of RNa EDiting in humans
+###
+### This script is used for finding onto RNA editing site in alternative 3' splice site
+###
+
+    * Annotation file  = \$annotation_gtf
+    * RNA editing site = \$editing_list  #Drived from DAtabase of RNa EDiting in humans
 
 Usage:
-       perl $0
+       perl $0 --run #Run, output is std
+
+Options: 
+       perl $0 --help | -h #Show help messages
 
 EOF
 }
