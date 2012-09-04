@@ -7,6 +7,7 @@ use 5.12.4;
 use Readonly;
 use Data::Dumper;
 
+
 ### COMMAND LINE
 if ( scalar @ARGV != 0 ) {
     my $cmd = join ",", @ARGV;
@@ -34,6 +35,7 @@ while ( my $entry = <$list_fh> ) {
     next if $entry =~ m/^chrom\s+coordinate/;
     chomp $entry;
     
+    # Parsing DARNED entries
     my @t = split/\t+/, $entry;
     my $chrom      = $t[0];
     my $coordinate = $t[1];
@@ -77,6 +79,7 @@ while ( my $line = <$anno_fh> ) {
     next if $line =~ /#+/;
     next if $line =~ /CDS/;
     
+    # Parsing each column
     my @t = split /\t/, $line;
     my $chromosome = $t[0];
     my $source     = $t[1];
@@ -88,6 +91,7 @@ while ( my $line = <$anno_fh> ) {
     my $frame      = $t[7];
     my $attribute  = $t[8];
     
+    # Parsing attribute column
     my @atr = split /\;/, $attribute;
     (my $gene_id         = $atr[0]) =~ s/gene_id|["\s]+//g;
     (my $transcript_id   = $atr[1]) =~ s/transcript_id|["\s]+//g;
@@ -96,7 +100,7 @@ while ( my $line = <$anno_fh> ) {
     (my $p_id            = $atr[4]) =~ s/p_id|["\s]+//g;
     (my $seqedit         = $atr[5]) =~ s/seqedit|["\s]+//g;
     (my $transcript_name = $atr[6]) =~ s/transcript_name|["\s]+//g;
-    (my $tss_id          = $atr[7]) =~ s/tss_id|["\s]+//g;
+    (my $tss_id          = $atr[7]) =~ s/tss_id|["\s]+//g; #Contain bug
 
 =pod
     say $gene_id;
@@ -108,22 +112,62 @@ while ( my $line = <$anno_fh> ) {
     say $tss_id;
     <STDIN>;
 =cut
-
+    
     my $gtf_primary = q//;
     Readonly $gtf_primary => "$start-$end-$transcript_id-$exon_number";
     
     if ( is_defined($gtf_primary) == 1 ) {
-        $gtf->{$gtf_primary}->{Chromosome} = $chromosome;
-        $gtf->{$gtf_primary}->{Feature}    = $feature;
-        $gtf->{$gtf_primary}->{Start}      = $start;
-        $gtf->{$gtf_primary}->{End}        = $end;
         
-        $gtf->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id;
-        $gtf->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id;
-        $gtf->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number;
+        if ( is_defined($chromosome) == 1 ) {
+            $gtf->{$gtf_primary}->{Chromosome} = $chromosome;
+        }
+        elsif ( is_defined($chromosome) == 0 ) {
+            die "Error: Chromosome is not defined at No. $.";
+        }
+        if ( is_defined($feature) == 1 ) {
+            $gtf->{$gtf_primary}->{Feature} = $feature;
+        }
+        elsif ( is_defined($feature) == 0 ) {
+            die "Error: Feature is not defined at No. $.";
+        }
+        if ( is_number($start) == 1 ) {
+            $gtf->{$gtf_primary}->{Start} = $start;
+        }
+        elsif ( is_number($start) == 0 ) {
+            die "Error: Start is not numetrically at No. $.";
+        }
+        if ( is_number($end) == 1 ) {
+            $gtf->{$gtf_primary}->{End} = $end;
+        }
+        elsif ( is_number($end) == 0 ) {
+            die "Error: End is not numetrically at No. $.";
+        }
+        if ( is_strand($strand) == 1 ) {
+            $gtf->{$gtf_primary}->{Strand} = $strand;
+        }
+        elsif ( is_strand($strand) == 0 ) {
+            die "Error: Strand is an correctly at No. $.";
+        }
+        if ( defined $frame ) { #is_defined is not work fine
+            $gtf->{$gtf_primary}->{Frame} = $frame;
+        }
+        else {
+            say $line;
+            die "Error: Frame is not defined at No. $.";
+        }
         
+        if ( is_defined($attribute) == 1 ) {
+            $gtf->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id       if is_defined($gene_id)       == 1;
+            $gtf->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number   if is_number($exon_number)    == 1;
+            $gtf->{$gtf_primary}->{Attribute}->{GeneName}     = $gene_name     if is_defined($gene_name)     == 1;
+            $gtf->{$gtf_primary}->{Attribute}->{ProteinID}    = $p_id          if is_defined($p_id)          == 1;
+            $gtf->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id if is_defined($transcript_id) == 1;
+            $gtf->{$gtf_primary}->{Attribute}->{TSSID}        = $tss_id        if is_defined($tss_id)        == 1;
+        }
+        elsif ( is_defined($attribute) == 0 ) {
+            die "Error: Attribute column is not defined";
+        }
     }
-
 }
 close $anno_fh;
 
@@ -141,7 +185,7 @@ sub help {
     my $msg = <<EOF
 this script is used for finding onto RNA editing site in alternative 3' splice site
     Annotation file = $annotation_gtf
-    RNA editing site = $editing_list
+    RNA editing site = $editing_list #Drived from DAtabase of RNa EDiting in humans
 
 Usage:
        perl $0
