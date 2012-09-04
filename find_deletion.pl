@@ -89,16 +89,16 @@ while ( my $line = <$anno_fh> ) {
     my $attribute  = $t[8];
     
     my @atr = split /\;/, $attribute;
-    (my $gene_id         = $atr[0]) =~ s/["]+//g;
-    (my $transcript_id   = $atr[1]) =~ s/["\s]+//g;
-    (my $exon_number     = $atr[2]) =~ s/["\s]+//g;
-    (my $gene_name       = $atr[3]) =~ s/["\s]+//g;
-    (my $p_id            = $atr[4]) =~ s/["\s]+//g;
-    (my $seqedit         = $atr[5]) =~ s/["\s]+//g;
-    (my $transcript_name = $atr[6]) =~ s/["\s]+//g;
-    (my $tss_id          = $atr[7]) =~ s/["\s]+//g;
+    (my $gene_id         = $atr[0]) =~ s/gene_id|["\s]+//g;
+    (my $transcript_id   = $atr[1]) =~ s/transcript_id|["\s]+//g;
+    (my $exon_number     = $atr[2]) =~ s/exon_number|["\s]+//g;
+    (my $gene_name       = $atr[3]) =~ s/gene_name|["\s]+//g;
+    (my $p_id            = $atr[4]) =~ s/p_id|["\s]+//g;
+    (my $seqedit         = $atr[5]) =~ s/seqedit|["\s]+//g;
+    (my $transcript_name = $atr[6]) =~ s/transcript_name|["\s]+//g;
+    (my $tss_id          = $atr[7]) =~ s/tss_id|["\s]+//g;
 
-=pod    
+=pod
     say $gene_id;
     say $transcript_id;
     say $exon_number;
@@ -111,7 +111,8 @@ while ( my $line = <$anno_fh> ) {
 
     my $gtf_primary = q//;
     Readonly $gtf_primary => "$start-$end-$transcript_id-$exon_number";
-    die $gtf_primary;
+    say $gtf_primary;
+    <STDIN>;
 }
 close $anno_fh;
 
