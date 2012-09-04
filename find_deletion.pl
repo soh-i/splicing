@@ -75,7 +75,7 @@ my $gtf = {};
 while ( my $line = <$anno_fh> ) {
     
     next if $line =~ /#+/;
-    next if !$line =~ /exon/;
+    next if $line =~ /CDS/;
     
     my @t = split /\t/, $line;
     my $chromosome = $t[0];
@@ -111,11 +111,23 @@ while ( my $line = <$anno_fh> ) {
 
     my $gtf_primary = q//;
     Readonly $gtf_primary => "$start-$end-$transcript_id-$exon_number";
-    say $gtf_primary;
-    <STDIN>;
+    
+    if ( is_defined($gtf_primary) == 1 ) {
+        $gtf->{$gtf_primary}->{Chromosome} = $chromosome;
+        $gtf->{$gtf_primary}->{Feature}    = $feature;
+        $gtf->{$gtf_primary}->{Start}      = $start;
+        $gtf->{$gtf_primary}->{End}        = $end;
+        
+        $gtf->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id;
+        $gtf->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id;
+        $gtf->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number;
+        
+    }
+
 }
 close $anno_fh;
 
+say Dumper $gtf;
 
 foreach my $gtf ( keys %{ $gtf } ) {
     foreach my $editing ( keys %{ $list } ) {
