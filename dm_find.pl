@@ -33,11 +33,11 @@ else {
 }
 
 ### INPUT FILES
-my $editing_list   = '/home/soh.i/melanogaster/DARNED_dm3.txt';
-my $annotation_gtf = '/home/soh.i/melanogaster/Ensembl.genes.gtf';
+#my $editing_list   = '/home/soh.i/melanogaster/DARNED_dm3.txt';
+#my $annotation_gtf = '/home/soh.i/melanogaster/Ensembl.genes.gtf';
 
-#my $editing_list   = '/home/soh.i/Human/DARNED_hg19.txt';
-#my $annotation_gtf = '/home/soh.i/Human/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf';
+my $editing_list   = '/home/soh.i/Human/DARNED_hg19.txt';
+my $annotation_gtf = '/home/soh.i/Human/Homo_sapiens/Ensembl/GRCh37/Annotation/Genes/genes.gtf';
 
 
 
@@ -211,7 +211,6 @@ foreach my $gtf_key ( keys %{ $gtf_data} ) {
             }
         }
     }
-    
 }
 
 ### HELP MASSAGES
