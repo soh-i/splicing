@@ -33,11 +33,11 @@ else {
 }
 
 ### INPUT FILES
-my $editing_list = '/home/soh.i/melanogaster/DARNED_dm3.txt';
+my $editing_list   = '/home/soh.i/melanogaster/DARNED_dm3.txt';
 my $annotation_gtf = '/home/soh.i/melanogaster/Ensembl.genes.gtf';
 
 # Loading DARNED file
-open my $list_fh, '<', $editing_list || die;
+open my $list_fh, '<', $editing_list || die $!;
 my $list = {};
 
 while ( my $entry = <$list_fh> ) {
@@ -56,23 +56,23 @@ while ( my $entry = <$list_fh> ) {
     my $exReg      = $t[7];
     my $PubmedID   = $t[8];
     
-    my $primary = q//;
+    my $darned_primary = q//;
     
     if ( is_number($coordinate) == 1 && is_defined($chrom) == 1 ) {
-        Readonly $primary => "$chrom-$coordinate";
+        Readonly $darned_primary => "$chrom-$coordinate";
         
-        $list->{$primary}->{coordinate} = $coordinate;
-        $list->{$primary}->{chrom}      = $chrom;
-        $list->{$primary}->{strand}     = $strand   if is_strand($strand)    == 1;
-        $list->{$primary}->{inchr}      = $inchr    if is_defined($inchr)    == 1;
-        $list->{$primary}->{inrna}      = $inrna    if is_defined($inrna)    == 1;
-        $list->{$primary}->{gene}       = $gene     if is_defined($gene)     == 1;
-        $list->{$primary}->{seqReg}     = $seqReg   if is_defined($seqReg)   == 1;
-        $list->{$primary}->{exReg}      = $exReg    if is_defined($exReg)    == 1;
-        $list->{$primary}->{pubmed}     = $PubmedID if is_defined($PubmedID) == 1;
+        $list->{$darned_primary}->{coordinate} = $coordinate;
+        $list->{$darned_primary}->{chrom}      = $chrom;
+        $list->{$darned_primary}->{strand}     = $strand   if is_strand($strand)    == 1;
+        $list->{$darned_primary}->{inchr}      = $inchr    if is_defined($inchr)    == 1;
+        $list->{$darned_primary}->{inrna}      = $inrna    if is_defined($inrna)    == 1;
+        $list->{$darned_primary}->{gene}       = $gene     if is_defined($gene)     == 1;
+        $list->{$darned_primary}->{seqReg}     = $seqReg   if is_defined($seqReg)   == 1;
+        $list->{$darned_primary}->{exReg}      = $exReg    if is_defined($exReg)    == 1;
+        $list->{$darned_primary}->{pubmed}     = $PubmedID if is_defined($PubmedID) == 1;
     }
     else {
-        die "coordinate and/or chrom is invalid in $entry";
+        die "coordinate and/or chrom is invalid line at No. $.";
     }
 }
 close $list_fh;
@@ -80,7 +80,7 @@ close $list_fh;
 #print Dumper $list;
 
 # Loading dm3 gtf file
-open my $anno_fh, '<', $annotation_gtf || die;
+open my $anno_fh, '<', $annotation_gtf || die $!;
 my $gtf = {};
 
 while ( my $line = <$anno_fh> ) {
@@ -182,6 +182,8 @@ close $anno_fh;
 
 say Dumper $gtf;
 
+
+### Merging files
 foreach my $gtf ( keys %{ $gtf } ) {
     foreach my $editing ( keys %{ $list } ) {
         
