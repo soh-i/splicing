@@ -109,7 +109,15 @@ while ( my $line = <$anno_fh> ) {
     (my $p_id            = $atr[4]) =~ s/p_id|["\s]+//g;
     (my $seqedit         = $atr[5]) =~ s/seqedit|["\s]+//g;
     (my $transcript_name = $atr[6]) =~ s/transcript_name|["\s]+//g;
-    (my $tss_id          = $atr[7]) =~ s/tss_id|["\s]+//g; #Contain bug
+    
+    #avoid undefined $tss_id
+    my $tss_id = q//;
+    eval {
+        ($tss_id = $atr[7]) =~ s/tss_id|["\s]+//g if defined $atr[7];
+    };
+    if ($@) {
+        die $line;
+    }
 
 =pod
     say $gene_id;
@@ -121,7 +129,6 @@ while ( my $line = <$anno_fh> ) {
     say $tss_id;
     <STDIN>;
 =cut
-    
     my $gtf_primary = q//;
     Readonly $gtf_primary => "$start-$end-$transcript_id-$exon_number";
     
@@ -180,10 +187,7 @@ while ( my $line = <$anno_fh> ) {
 }
 close $anno_fh;
 
-#say Dumper $gtf;
-
-
-### Merging files
+### Findling 3' splice site in editing site
 foreach my $gtf_key ( keys %{ $gtf_data} ) {
     foreach my $darned_key ( keys %{ $darned_data } ) {
         
