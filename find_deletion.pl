@@ -38,7 +38,7 @@ my $annotation_gtf = '/home/soh.i/melanogaster/Ensembl.genes.gtf';
 
 # Loading DARNED file
 open my $list_fh, '<', $editing_list || die $!;
-my $list = {};
+my $darned_data = {};
 
 while ( my $entry = <$list_fh> ) {
     next if $entry =~ m/^chrom\s+coordinate/;
@@ -61,15 +61,15 @@ while ( my $entry = <$list_fh> ) {
     if ( is_number($coordinate) == 1 && is_defined($chrom) == 1 ) {
         Readonly $darned_primary => "$chrom-$coordinate";
         
-        $list->{$darned_primary}->{coordinate} = $coordinate;
-        $list->{$darned_primary}->{chrom}      = $chrom;
-        $list->{$darned_primary}->{strand}     = $strand   if is_strand($strand)    == 1;
-        $list->{$darned_primary}->{inchr}      = $inchr    if is_defined($inchr)    == 1;
-        $list->{$darned_primary}->{inrna}      = $inrna    if is_defined($inrna)    == 1;
-        $list->{$darned_primary}->{gene}       = $gene     if is_defined($gene)     == 1;
-        $list->{$darned_primary}->{seqReg}     = $seqReg   if is_defined($seqReg)   == 1;
-        $list->{$darned_primary}->{exReg}      = $exReg    if is_defined($exReg)    == 1;
-        $list->{$darned_primary}->{pubmed}     = $PubmedID if is_defined($PubmedID) == 1;
+        $darned_data->{$darned_primary}->{coordinate} = $coordinate;
+        $darned_data->{$darned_primary}->{chrom}      = $chrom;
+        $darned_data->{$darned_primary}->{strand}     = $strand   if is_strand($strand)    == 1;
+        $darned_data->{$darned_primary}->{inchr}      = $inchr    if is_defined($inchr)    == 1;
+        $darned_data->{$darned_primary}->{inrna}      = $inrna    if is_defined($inrna)    == 1;
+        $darned_data->{$darned_primary}->{gene}       = $gene     if is_defined($gene)     == 1;
+        $darned_data->{$darned_primary}->{seqReg}     = $seqReg   if is_defined($seqReg)   == 1;
+        $darned_data->{$darned_primary}->{exReg}      = $exReg    if is_defined($exReg)    == 1;
+        $darned_data->{$darned_primary}->{pubmed}     = $PubmedID if is_defined($PubmedID) == 1;
     }
     else {
         die "coordinate and/or chrom is invalid line at No. $.";
@@ -81,7 +81,7 @@ close $list_fh;
 
 # Loading dm3 gtf file
 open my $anno_fh, '<', $annotation_gtf || die $!;
-my $gtf = {};
+my $gtf_data = {};
 
 while ( my $line = <$anno_fh> ) {
     
@@ -128,37 +128,37 @@ while ( my $line = <$anno_fh> ) {
     if ( is_defined($gtf_primary) == 1 ) {
         
         if ( is_defined($chromosome) == 1 ) {
-            $gtf->{$gtf_primary}->{Chromosome} = $chromosome;
+            $gtf_data->{$gtf_primary}->{Chromosome} = $chromosome;
         }
         elsif ( is_defined($chromosome) == 0 ) {
             die "Error: Chromosome is not defined at No. $.";
         }
         if ( is_defined($feature) == 1 ) {
-            $gtf->{$gtf_primary}->{Feature} = $feature;
+            $gtf_data->{$gtf_primary}->{Feature} = $feature;
         }
         elsif ( is_defined($feature) == 0 ) {
             die "Error: Feature is not defined at No. $.";
         }
         if ( is_number($start) == 1 ) {
-            $gtf->{$gtf_primary}->{Start} = $start;
+            $gtf_data->{$gtf_primary}->{Start} = $start;
         }
         elsif ( is_number($start) == 0 ) {
             die "Error: Start is not numetrically at No. $.";
         }
         if ( is_number($end) == 1 ) {
-            $gtf->{$gtf_primary}->{End} = $end;
+            $gtf_data->{$gtf_primary}->{End} = $end;
         }
         elsif ( is_number($end) == 0 ) {
             die "Error: End is not numetrically at No. $.";
         }
         if ( is_strand($strand) == 1 ) {
-            $gtf->{$gtf_primary}->{Strand} = $strand;
+            $gtf_data->{$gtf_primary}->{Strand} = $strand;
         }
         elsif ( is_strand($strand) == 0 ) {
             die "Error: Strand is an correctly at No. $.";
         }
         if ( defined $frame ) { #is_defined is not work fine
-            $gtf->{$gtf_primary}->{Frame} = $frame;
+            $gtf_data->{$gtf_primary}->{Frame} = $frame;
         }
         else {
             say $line;
@@ -166,12 +166,12 @@ while ( my $line = <$anno_fh> ) {
         }
         
         if ( is_defined($attribute) == 1 ) {
-            $gtf->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id       if is_defined($gene_id)       == 1;
-            $gtf->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number   if is_number($exon_number)    == 1;
-            $gtf->{$gtf_primary}->{Attribute}->{GeneName}     = $gene_name     if is_defined($gene_name)     == 1;
-            $gtf->{$gtf_primary}->{Attribute}->{ProteinID}    = $p_id          if is_defined($p_id)          == 1;
-            $gtf->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id if is_defined($transcript_id) == 1;
-            $gtf->{$gtf_primary}->{Attribute}->{TSSID}        = $tss_id        if is_defined($tss_id)        == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id       if is_defined($gene_id)       == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number   if is_number($exon_number)    == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{GeneName}     = $gene_name     if is_defined($gene_name)     == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{ProteinID}    = $p_id          if is_defined($p_id)          == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id if is_defined($transcript_id) == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{TSSID}        = $tss_id        if is_defined($tss_id)        == 1;
         }
         elsif ( is_defined($attribute) == 0 ) {
             die "Error: Attribute column is not defined";
@@ -180,16 +180,21 @@ while ( my $line = <$anno_fh> ) {
 }
 close $anno_fh;
 
-say Dumper $gtf;
+#say Dumper $gtf;
 
 
 ### Merging files
-foreach my $gtf ( keys %{ $gtf } ) {
-    foreach my $editing ( keys %{ $list } ) {
+foreach my $gtf_key ( keys %{ $gtf_data} ) {
+    foreach my $darned_key ( keys %{ $darned_data } ) {
         
+        if ( $gtf_data->{$gtf_key}->{Chromosome} eq $darned_data->{$darned_key}->{chrom} ) {
+            if ( ($gtf_data->{$gtf_key}->{Start} -2) == $darned_data->{$darned_key}->{coordinate} ) {
+                die Dumper $darned_data;
+            }
+        }
     }
+    
 }
-
 
 ### HELP MASSAGES
 sub help {
@@ -198,8 +203,8 @@ sub help {
 ### This script is used for finding onto RNA editing site in alternative 3' splice site
 ###
 
-    * Annotation file  = \$annotation_gtf
-    * RNA editing site = \$editing_list  #Drived from DAtabase of RNa EDiting in humans
+    * Annotation file  = /home/soh.i/melanogaster/Ensembl.genes.gtf
+    * RNA editing site = /home/soh.i/melanogaster/DARNED_dm3.txt    #Drived from DAtabase of RNa EDiting in humans
 
 Usage:
        perl $0 --run #Run, output is std
