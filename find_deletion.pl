@@ -36,6 +36,11 @@ else {
 my $editing_list   = '/home/soh.i/melanogaster/DARNED_dm3.txt';
 my $annotation_gtf = '/home/soh.i/melanogaster/Ensembl.genes.gtf';
 
+#my $editing_list   = '/home/soh.i/Human/DARNED_hg19.txt';
+#my $annotation_gtf = '/home/soh.i/Human/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf';
+
+
+
 # Loading DARNED file
 open my $list_fh, '<', $editing_list || die $!;
 my $darned_data = {};
@@ -77,7 +82,7 @@ while ( my $entry = <$list_fh> ) {
 }
 close $list_fh;
 
-#print Dumper $list;
+#print Dumper $darned_data;
 
 # Loading dm3 gtf file
 open my $anno_fh, '<', $annotation_gtf || die $!;
@@ -86,7 +91,7 @@ my $gtf_data = {};
 while ( my $line = <$anno_fh> ) {
     
     next if $line =~ /#+/;
-    next if $line =~ /CDS/;
+    #next if $line =~ /CDS/;
     
     # Parsing each column
     my @t = split /\t/, $line;
@@ -190,10 +195,19 @@ close $anno_fh;
 ### Findling 3' splice site in editing site
 foreach my $gtf_key ( keys %{ $gtf_data} ) {
     foreach my $darned_key ( keys %{ $darned_data } ) {
-        
         if ( $gtf_data->{$gtf_key}->{Chromosome} eq $darned_data->{$darned_key}->{chrom} ) {
-            if ( ($gtf_data->{$gtf_key}->{Start} -2) == $darned_data->{$darned_key}->{coordinate} ) {
-                die Dumper $darned_data;
+            
+            my $A_of_AG = ($gtf_data->{$gtf_key}->{Start}-2);
+            if ( $A_of_AG == $darned_data->{$darned_key}->{coordinate} ) {
+                say "Feature:                $gtf_data->{$gtf_key}->{Feature}";
+                say "GTF exon start -2 pos:  $A_of_AG";
+                say "GTF Gene name:          $gtf_data->{$gtf_key}->{Attribute}->{GeneName}";
+                say "GTF transcript ID:      $gtf_data->{$gtf_key}->{Attribute}->{TranscriptID}";
+                say "GTF exon number:        $gtf_data->{$gtf_key}->{Attribute}->{ExonNumber}";
+                say "Editing in splice site: $darned_data->{$darned_key}->{coordinate}";
+                say "Gene name in editing:   $darned_data->{$darned_key}->{gene}";
+                say "Pubmed ID:              $darned_data->{$darned_key}->{pubmed}";
+                say "##";
             }
         }
     }
