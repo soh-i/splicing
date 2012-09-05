@@ -172,10 +172,11 @@ while ( my $line = <$anno_fh> ) {
             die "Error: Frame is not defined at No. $.";
         }
         
+        # Attribute column
         if ( is_defined($attribute) == 1 ) {
             $gtf_data->{$gtf_primary}->{Attribute}->{GeneID}       = $gene_id       if is_defined($gene_id)       == 1;
             $gtf_data->{$gtf_primary}->{Attribute}->{ExonNumber}   = $exon_number   if is_number($exon_number)    == 1;
-            $gtf_data->{$gtf_primary}->{Attribute}->{Biotype}      = $gene_name     if is_defined($gene_name)     == 1;
+            $gtf_data->{$gtf_primary}->{Attribute}->{Biotype}      = $gene_biotype  if is_defined($gene_biotype)  == 1;
             $gtf_data->{$gtf_primary}->{Attribute}->{GeneName}     = $gene_name     if is_defined($gene_name)     == 1;
             $gtf_data->{$gtf_primary}->{Attribute}->{TranscriptID} = $transcript_id if is_defined($transcript_id) == 1;
             $gtf_data->{$gtf_primary}->{Attribute}->{TSSID}        = $tss_id        if is_defined($tss_id)        == 1;
@@ -198,12 +199,14 @@ foreach my $gtf_key ( keys %{ $gtf_data} ) {
             if ( $A_of_AG == $darned_data->{$darned_key}->{coordinate} ) {
                 say "Feature:                $gtf_data->{$gtf_key}->{Feature}";
                 say "Gene Biotype:           $gtf_data->{$gtf_key}->{Biotype}";
-                say "GTF exon start -2 pos:  $A_of_AG";
+                say "3' splice site pos:     $A_of_AG";
+                say "DARNED editing pos:     $darned_data->{$darned_key}->{coordinate}";
+                say "Located event(E/I):     $darned_data->{$darned_key}->{seqReg}";
                 say "GTF Gene name:          $gtf_data->{$gtf_key}->{Attribute}->{GeneName}";
+                say "GTF Gene ID:            $gtf_data->{$gtf_key}->{Attribute}->{GeneID}";
+                say "GTF Chromosome:         $gtf_data->{$gtf_key}->{Chromosome}";
                 say "GTF transcript ID:      $gtf_data->{$gtf_key}->{Attribute}->{TranscriptID}";
                 say "GTF exon number:        $gtf_data->{$gtf_key}->{Attribute}->{ExonNumber}";
-                say "Editing in splice site: $darned_data->{$darned_key}->{coordinate}";
-                say "Gene name in editing:   $darned_data->{$darned_key}->{gene}";
                 say "Pubmed ID:              $darned_data->{$darned_key}->{pubmed}";
                 say "##";
             }
