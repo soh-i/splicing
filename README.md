@@ -1,18 +1,13 @@
 splicing
 ========
 
-## About
-*D. melanogaster*におけるAlternative splicingとRNA Editingの関係性を明らかにする.
+## Description
+* Spring project in Tsuruoka, Yamagata
+* Relationships between Alternative splicing and RNA editing in *D. melanogaster*
 
-## File
+## AS. data files
+* flybase_transcripts.gff
+* flybase_structures.tsv
+* flybase_TranscriptEvent.tsv
 
-```
-flybase_transcripts.gff
-flybase_structures.tsv
-flybase_TranscriptEvent.tsv
-```
 
-## Code
-1. modENCODE各ファイルのバリデーションとパーシング
-2. EnsemblによってアノテーションされたASデータのパーシング
-3. modENCODE projectで同定されたEditing siteとSplice siteの統合
